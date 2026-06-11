@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap');
+@import "tailwindcss";
+
+:root {
+  background-color: #0a0a0a;
+  color: #fff;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(29, 185, 84, 0.25);
+  color: #fff;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1DB954;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+}
+
+.btn-primary {
+  background: #1DB954;
+  color: #000;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.btn-primary:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+input, select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+input:focus, select:focus {
+  border-color: #1DB954;
+}

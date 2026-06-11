@@ -21,7 +21,7 @@ export default function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user, isAdmin, logout } = useAuth();
+  const { isAuthenticated, user, isAdmin, isStaff, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [prevPathname, setPrevPathname] = useState(location.pathname);
   if (location.pathname !== prevPathname) {
@@ -135,7 +135,7 @@ export default function Navigation() {
                     style={{
                       color: isActive ? '#fff' : 'rgba(255,255,255,0.6)',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = isActive ? '#fff' : 'rgba(255,255,255,0.6)'; }}
                     aria-current={isActive ? 'true' : undefined}
                   >
@@ -183,7 +183,8 @@ export default function Navigation() {
                       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
                       { icon: BookOpen, label: 'Library', path: '/library' },
                       { icon: User, label: 'Profile', path: '/profile' },
-                      ...(isAdmin ? [{ icon: Shield, label: 'Admin', path: '/admin' }] : []),
+                      ...(user?.role === 'admin' ? [{ icon: Shield, label: 'Admin', path: '/admin' }] : []),
+                      ...(user?.role === 'moderator' ? [{ icon: Shield, label: 'Editor', path: '/admin' }] : []),
                     ].map(({ icon: Icon, label, path }) => (
                       <button
                         key={path}

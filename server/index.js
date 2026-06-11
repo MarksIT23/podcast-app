@@ -21,7 +21,90 @@ import { startIngestionJob } from './jobs/ingestion.js';
 import { startHighlightDetectionJob } from './jobs/highlight-detection.js';
 import publicRoutes from './routes/public.js';
 
-const prisma = new PrismaClient();
+import { getCollection } from './lib/mongodb.js';
+import { createClient } from '@supabase/supabase-js';
+
+const rawPrisma = new PrismaClient();
+
+// Configure Supabase (PostgreSQL) replication if credentials are set
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
+if (supabase) {
+  console.log('[Sync System] Real-time Supabase replication configured.');
+}
+
+async function replicateToOthers(model, action, data) {
+  try {
+    // 1. Replicate to Editor's MongoDB Collection
+    const mongoCollection = getCollection(model.toLowerCase());
+    if (action === 'create') {
+      await mongoCollection.insertOne({ ...data, syncSource: 'sqlite' });
+    } else if (action === 'update') {
+      await mongoCollection.updateOne({ id: data.id }, { $set: data });
+    } else if (action === 'delete') {
+      await mongoCollection.deleteOne({ id: data.id });
+    }
+  } catch (err) {
+    console.warn(`[MongoDB Sync Warning] Failed to sync ${model} ${action}:`, err.message);
+  }
+
+  try {
+    // 2. Replicate to User's Supabase (PostgreSQL) database
+    if (supabase) {
+      const tableName = model.toLowerCase();
+      // Only replicate core entities to prevent schema errors in Supabase unless tables exist
+      const supportedTables = ['podcast', 'episode', 'category', 'highlight', 'highlightcollection'];
+      if (supportedTables.includes(tableName)) {
+        if (action === 'create') {
+          // Exclude relational objects
+          const cleanData = { ...data };
+          delete cleanData.categories;
+          delete cleanData.feeds;
+          delete cleanData.episodes;
+          const { error } = await supabase.from(tableName).insert([cleanData]);
+          if (error) console.warn(`[Supabase Sync Warning] Insert on ${tableName} failed:`, error.message);
+        } else if (action === 'update') {
+          const cleanData = { ...data };
+          delete cleanData.categories;
+          delete cleanData.feeds;
+          delete cleanData.episodes;
+          const { error } = await supabase.from(tableName).update(cleanData).eq('id', data.id);
+          if (error) console.warn(`[Supabase Sync Warning] Update on ${tableName} failed:`, error.message);
+        } else if (action === 'delete') {
+          const { error } = await supabase.from(tableName).delete().eq('id', data.id);
+          if (error) console.warn(`[Supabase Sync Warning] Delete on ${tableName} failed:`, error.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[Supabase Sync Warning] Failed to sync ${model} ${action}:`, err.message);
+  }
+}
+
+const prisma = rawPrisma.$extends({
+  query: {
+    $allModels: {
+      async create({ model, args, query }) {
+        const result = await query(args);
+        await replicateToOthers(model, 'create', result);
+        return result;
+      },
+      async update({ model, args, query }) {
+        const result = await query(args);
+        await replicateToOthers(model, 'update', result);
+        return result;
+      },
+      async delete({ model, args, query }) {
+        const result = await query(args);
+        await replicateToOthers(model, 'delete', result);
+        return result;
+      }
+    }
+  }
+});
+
 const app = express();
 const PORT = process.env.ADMIN_PORT || 3002;
 const JWT_SECRET = process.env.JWT_SECRET || 'admin-secret-key-change-in-production';

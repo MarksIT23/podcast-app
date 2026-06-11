@@ -24,7 +24,7 @@ export default function AuthPage() {
       if (isLogin) {
         const user = await login(email, password);
         addToast('Welcome back!', 'success');
-        navigate(user.role === 'admin' ? '/admin' : '/dashboard');
+        navigate(user.role === 'admin' || user.role === 'moderator' ? '/admin' : '/dashboard');
       } else {
         await register(name, email, password);
         addToast('Account created successfully!', 'success');

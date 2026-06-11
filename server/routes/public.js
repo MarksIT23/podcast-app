@@ -59,7 +59,7 @@ export default function publicRoutes(prisma) {
           orderBy: { createdAt: 'desc' },
           include: {
             categories: { select: { name: true, slug: true, color: true } },
-            feeds: { select: { id: true } },
+            feeds: { select: { id: true, category: true } },
           },
         }),
         prisma.podcast.count({ where: { status: 'published' } }),
@@ -70,11 +70,22 @@ export default function publicRoutes(prisma) {
           const episodeCount = await prisma.episode.count({
             where: { feedId: { in: p.feeds.map((f) => f.id) } },
           });
+
+          // Use linked Category records if available; fall back to the feed's
+          // plain category string so the badge always has something to display.
+          let categories = (p.categories || []).map(c => ({ name: c.name, slug: c.slug, color: c.color }));
+          if (categories.length === 0) {
+            const feedCat = p.feeds.find(f => f.category)?.category;
+            if (feedCat) {
+              categories = [{ name: feedCat, slug: feedCat.toLowerCase().replace(/\s+/g, '-'), color: '#6366f1' }];
+            }
+          }
+
           return {
             id: p.id,
             title: p.title,
             host: p.host || '',
-            categories: (p.categories || []).map(c => ({ name: c.name, slug: c.slug, color: c.color })),
+            categories,
             description: p.description || '',
             coverImage: p.coverImage || '',
             episodes: episodeCount,
@@ -139,9 +150,36 @@ export default function publicRoutes(prisma) {
       const { episodeId } = req.body;
       if (!episodeId) return res.status(400).json({ error: 'episodeId is required' });
 
+      // Create history record
       const record = await prisma.listeningHistory.create({
         data: { episodeId, progress: 0, playedAt: new Date() },
       });
+
+      // Increment plays on the Episode
+      const updatedEpisode = await prisma.episode.update({
+        where: { id: episodeId },
+        data: {
+          plays: {
+            increment: 1,
+          },
+        },
+        include: {
+          feed: true,
+        },
+      });
+
+      // Increment plays on the parent Podcast if it has one linked via feed
+      if (updatedEpisode.feed && updatedEpisode.feed.podcastId) {
+        await prisma.podcast.update({
+          where: { id: updatedEpisode.feed.podcastId },
+          data: {
+            plays: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
       res.json({ data: record });
     } catch (err) {
       res.status(500).json({ error: err.message });

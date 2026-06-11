@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Subsystem build artifacts
+.next
+server/prisma/mongodb_*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

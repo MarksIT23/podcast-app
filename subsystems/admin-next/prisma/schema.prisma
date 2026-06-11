@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// Auth
+// ============================================
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+}
+
+// ============================================
+// Categories
+// ============================================
+
+model Category {
+  id           String    @id @default(uuid())
+  name         String    @unique
+  slug         String    @unique
+  description  String    @default("")
+  color        String    @default("#6366f1")
+  podcastCount Int       @default(0)
+  createdAt    DateTime  @default(now())
+  podcasts     Podcast[]
+}
+
+// ============================================
+// Podcasts (curated shows, different from RSS feeds)
+// ============================================
+
+model Podcast {
+  id           String    @id @default(uuid())
+  title        String
+  host         String    @default("")
+  description  String    @default("")
+  coverImage   String    @default("")
+  status       String    @default("published") // published | draft | archived
+  rating       Float     @default(0)
+  language     String    @default("English")
+  featured     Boolean   @default(false)
+  summary      String    @default("")
+  tags         String    @default("[]") // JSON array
+  plays        Int       @default(0)
+  episodeCount Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  categories Category[]
+  feeds      Feed[]
+  savedBy    SavedPodcast[]
+}
+
+// ============================================
+// RSS Feeds (linked to podcasts)
+// ============================================
+
+model Feed {
+  id          String    @id @default(uuid())
+  url         String    @unique
+  category    String?
+  status      String    @default("active")
+  lastFetched DateTime?
+  createdAt   DateTime  @default(now())
+
+  podcastId String?
+  podcast   Podcast?  @relation(fields: [podcastId], references: [id], onDelete: SetNull)
+  episodes  Episode[]
+  jobs      Job[]
+}
+
+// ============================================
+// Episodes (from RSS feeds)
+// ============================================
+
+model Episode {
+  id          String    @id @default(uuid())
+  feedId      String
+  feed        Feed      @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  audioUrl    String
+  duration    Int?
+  publishedAt DateTime?
+  rawData     String?
+  createdAt   DateTime  @default(now())
+
+  host   String @default("")
+  plays  Int    @default(0)
+  tags   String @default("[]") // JSON array
+  history ListeningHistory[]
+  playlistEntries PlaylistEpisode[]
+  highlights      Highlight[]
+}
+
+// ============================================
+// Ingestion Jobs
+// ============================================
+
+model Job {
+  id      String   @id @default(uuid())
+  feedId  String
+  feed    Feed     @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  status  String
+  message String?
+  runAt   DateTime @default(now())
+}
+
+// ============================================
+// Dashboard Users (not admin - app users)
+// ============================================
+
+model AppUser {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  password    String?
+  role        String   @default("user")  // user | moderator | admin
+  status      String   @default("active") // active | suspended | inactive
+  avatar      String?
+  bio         String   @default("")
+  joinedAt    DateTime @default(now())
+  lastActive  DateTime @default(now())
+  social      String   @default("{}")      // JSON
+  preferences String   @default("{\"theme\":\"dark\",\"notifications\":{\"email\":true,\"push\":true,\"digest\":false}}")
+}
+
+// ============================================
+// Activity Feed
+// ============================================
+
+model Activity {
+  id        String   @id @default(uuid())
+  type      String   // signup | podcast_created | episode_published | milestone | podcast_updated | report
+  user      String
+  detail    String
+  timestamp DateTime @default(now())
+}
+
+// ============================================
+// Platform Settings (key-value store, JSON values)
+// ============================================
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   // JSON-encoded value
+  updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// Playlists
+// ============================================
+
+model Playlist {
+  id           String   @id @default(uuid())
+  name         String
+  description  String   @default("")
+  episodeCount Int      @default(0)
+  emoji        String   @default("⭐")
+  createdAt    DateTime @default(now())
+  episodes     PlaylistEpisode[]
+}
+
+// Playlist ↔ Episode junction
+model PlaylistEpisode {
+  id         String   @id @default(uuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  episodeId  String
+  episode    Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  addedAt    DateTime @default(now())
+
+  @@unique([playlistId, episodeId])
+}
+
+// ============================================
+// Saved Podcasts
+// ============================================
+
+model SavedPodcast {
+  id        String   @id @default(uuid())
+  podcastId String
+  podcast   Podcast  @relation(fields: [podcastId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+// ============================================
+// Listening History
+// ============================================
+
+model ListeningHistory {
+  id        String   @id @default(uuid())
+  episodeId String
+  episode   Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  progress  Int      @default(0)
+  playedAt  DateTime @default(now())
+}
+
+// ============================================
+// AI Highlights
+// ============================================
+
+model HighlightCollection {
+  id          String      @id @default(uuid())
+  name        String
+  description String      @default("")
+  slug        String      @unique
+  coverImage  String      @default("")
+  color       String      @default("#3B82F6")
+  createdAt   DateTime    @default(now())
+  highlights  Highlight[]
+}
+
+model Highlight {
+  id           String              @id @default(uuid())
+  episodeId    String
+  episode      Episode             @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  collectionId String?
+  collection   HighlightCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  title        String
+  description  String              @default("")
+  startTime    Int                 // seconds from episode start
+  endTime      Int                 // seconds from episode start
+  confidence   Float               @default(0)
+  status       String              @default("pending") // pending | approved | rejected
+  tags         String              @default("[]")       // JSON array
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  segments     HighlightSegment[]
+
+  @@index([episodeId])
+  @@index([status])
+  @@index([collectionId])
+}
+
+model HighlightSegment {
+  id          String    @id @default(uuid())
+  highlightId String
+  highlight   Highlight @relation(fields: [highlightId], references: [id], onDelete: Cascade)
+  label       String    // key_point | quote | summary | sentiment_shift
+  startTime   Int       // seconds
+  endTime     Int       // seconds
+  text        String    @default("")
+  confidence  Float     @default(0)
+
+  @@index([highlightId])
+}
