@@ -1,0 +1,141 @@
+/* ============================================
+   Design System — Spotify-Inspired Dark Theme
+   Premium AI Podcast Platform
+   ============================================ */
+
+@layer base {
+  :root {
+    /* === Spotify Core Colors === */
+    --sp-green: #1DB954;
+    --sp-green-light: #1ED760;
+    --sp-green-dark: #158a3e;
+    --sp-black: #000000;
+    --sp-dark: #121212;
+    --sp-dark-elevated: #181818;
+    --sp-dark-highlight: #282828;
+    --sp-dark-press: #333333;
+    --sp-white: #FFFFFF;
+
+    /* === Accent Colors === */
+    --color-accent-green: #1DB954;
+    --color-accent-green-light: #1ED760;
+    --color-accent-green-glow: rgba(29, 185, 84, 0.4);
+    --color-accent-purple: #8B5CF6;
+    --color-accent-purple-light: #A78BFA;
+    --color-accent-blue: #3B82F6;
+    --color-accent-blue-light: #60A5FA;
+    --color-accent-orange: #F97316;
+    --color-accent-pink: #EC4899;
+
+    /* === Surface Colors (Always Dark) === */
+    --color-black-deep: #0a0a0a;
+    --color-black-secondary: #111111;
+    --color-surface: #181818;
+    --color-surface-elevated: #282828;
+    --color-surface-hover: #333333;
+    --color-border: rgba(255, 255, 255, 0.1);
+    --color-border-light: rgba(255, 255, 255, 0.06);
+
+    /* === Text Colors === */
+    --text-primary: #FFFFFF;
+    --text-secondary: #B3B3B3;
+    --text-tertiary: #6B6B6B;
+    --text-inverse: #000000;
+    --text-link: var(--sp-green);
+    --text-link-hover: var(--sp-green-light);
+
+    /* === Semantic Colors === */
+    --color-primary: var(--sp-green);
+    --color-primary-hover: var(--sp-green-light);
+    --color-secondary: var(--color-accent-purple);
+    --color-secondary-hover: var(--color-accent-purple-light);
+    --color-success: #1DB954;
+    --color-warning: #F59E0B;
+    --color-danger: #EF4444;
+
+    /* === Shadows === */
+    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+    --shadow-card-hover: 0 8px 40px rgba(0, 0, 0, 0.7);
+    --shadow-dropdown: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --shadow-modal: 0 16px 64px rgba(0, 0, 0, 0.8);
+    --shadow-deep: 0 24px 80px rgba(0, 0, 0, 0.9);
+    --shadow-nav: 0 2px 20px rgba(0, 0, 0, 0.8);
+
+    /* === Glow Effects === */
+    --glow-green: 0 0 30px rgba(29, 185, 84, 0.35);
+    --glow-green-hover: 0 0 50px rgba(29, 185, 84, 0.55);
+    --glow-green-intense: 0 0 80px rgba(29, 185, 84, 0.8);
+    --glow-purple: 0 0 30px rgba(139, 92, 246, 0.35);
+    --glow-purple-hover: 0 0 50px rgba(139, 92, 246, 0.55);
+    --glow-purple-intense: 0 0 80px rgba(139, 92, 246, 0.8);
+    --glow-blue: 0 0 30px rgba(59, 130, 246, 0.35);
+    --glow-blue-hover: 0 0 50px rgba(59, 130, 246, 0.55);
+    --glow-orange: 0 0 30px rgba(249, 115, 22, 0.35);
+    --glow-orange-hover: 0 0 50px rgba(249, 115, 22, 0.55);
+    
+    /* === Legacy compat aliases === */
+    --color-accent-purple-dark: #7C3AED;
+    --color-accent-orange-light: #FB923C;
+    --color-accent-orange-dark: #EA580C;
+
+    /* === Spacing Scale (4px base) === */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+    --space-9: 36px;
+    --space-10: 40px;
+    --space-11: 44px;
+    --space-12: 48px;
+    --space-14: 56px;
+    --space-16: 64px;
+    --space-20: 80px;
+    --space-24: 96px;
+    --space-32: 128px;
+
+    /* === Border Radius === */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-2xl: 24px;
+    --radius-3xl: 32px;
+    --radius-full: 9999px;
+
+    /* === Transitions === */
+    --transition-fast: 150ms ease;
+    --transition-normal: 300ms ease;
+    --transition-slow: 600ms ease;
+    --transition-spring: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* === Z-Index Scale === */
+    --z-base: 1;
+    --z-dropdown: 10;
+    --z-sticky: 20;
+    --z-nav: 30;
+    --z-overlay: 40;
+    --z-modal: 50;
+    --z-tooltip: 60;
+    --z-toast: 70;
+
+    /* === Glassmorphism === */
+    --glass-bg: rgba(18, 18, 18, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-blur: 20px;
+    --glass-blur-heavy: 40px;
+
+    /* === Layout === */
+    --max-width: 1320px;
+    --nav-height: 72px;
+    --player-height: 80px;
+  }
+
+  /* Force dark mode everywhere — Spotify is always dark */
+  [data-theme="dark"], :root {
+    color-scheme: dark;
+  }
+}
