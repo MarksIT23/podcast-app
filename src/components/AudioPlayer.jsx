@@ -57,11 +57,7 @@ export function AudioProvider({ children }) {
     progressSaveRef.current = setInterval(() => {
       if (audioRef.current && duration > 0) {
         const pct = Math.round((audioRef.current.currentTime / duration) * 100);
-        fetch(`${API_BASE}/progress`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ episodeId: currentTrack.id, progress: pct }),
-        }).catch(() => {});
+        api.post('/progress', { episodeId: currentTrack.id, progress: pct }).catch(() => {});
       }
     }, 15000);
     return () => clearInterval(progressSaveRef.current);
@@ -117,11 +113,7 @@ export function AudioProvider({ children }) {
     audioRef.current.load();
     audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
     // Log play event
-    fetch(`${API_BASE}/history`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ episodeId: track.id }),
-    }).catch(() => {});
+    api.post('/history', { episodeId: track.id }).catch(() => {});
   }, [currentTrack]);
 
   const togglePlay = useCallback(() => {
@@ -209,11 +201,7 @@ export function AudioProvider({ children }) {
         audioRef.current.src = next.audioUrl;
         audioRef.current.load();
         audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-        fetch(`${API_BASE}/history`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ episodeId: next.id }),
-        }).catch(() => {});
+        api.post('/history', { episodeId: next.id }).catch(() => {});
       }
       return;
     }
@@ -231,11 +219,7 @@ export function AudioProvider({ children }) {
           audioRef.current.src = next.audioUrl;
           audioRef.current.load();
           audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-          fetch(`${API_BASE}/history`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ episodeId: next.id }),
-          }).catch(() => {});
+          api.post('/history', { episodeId: next.id }).catch(() => {});
         }
       }
     }

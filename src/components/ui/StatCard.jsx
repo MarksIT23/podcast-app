@@ -18,7 +18,7 @@ export default function StatCard({ label, value, change, trend, icon: Icon, colo
           </div>
         )}
       </div>
-      <p className="text-display font-bold mb-1">{value}</p>
+      <p className="text-subsection font-bold mb-1">{value}</p>
       {change && (
         <div className="flex items-center gap-1 text-caption" style={{ color: trendColor }}>
           {isUp ? <ArrowUp size={12} aria-hidden="true" /> : <ArrowDown size={12} aria-hidden="true" />}

@@ -133,6 +133,10 @@ model AppUser {
   lastActive  DateTime @default(now())
   social      String   @default("{}")      // JSON
   preferences String   @default("{\"theme\":\"dark\",\"notifications\":{\"email\":true,\"push\":true,\"digest\":false}}")
+
+  playlists        Playlist[]
+  savedPodcasts    SavedPodcast[]
+  listeningHistory ListeningHistory[]
 }
 
 // ============================================
@@ -170,6 +174,9 @@ model Playlist {
   emoji        String   @default("⭐")
   createdAt    DateTime @default(now())
   episodes     PlaylistEpisode[]
+
+  userId       String?
+  user         AppUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Playlist ↔ Episode junction
@@ -193,6 +200,9 @@ model SavedPodcast {
   podcastId String
   podcast   Podcast  @relation(fields: [podcastId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+
+  userId    String?
+  user      AppUser?  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ============================================
@@ -205,6 +215,9 @@ model ListeningHistory {
   episode   Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   progress  Int      @default(0)
   playedAt  DateTime @default(now())
+
+  userId    String?
+  user      AppUser?  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ============================================

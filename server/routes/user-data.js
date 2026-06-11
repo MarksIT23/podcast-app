@@ -10,6 +10,7 @@ export default function userDataRoutes(prisma) {
 
       const [data, total] = await Promise.all([
         prisma.listeningHistory.findMany({
+          where: { userId: req.user.id },
           orderBy: { playedAt: 'desc' },
           skip: (Number(page) - 1) * Number(pageSize),
           take: Number(pageSize),
@@ -21,7 +22,7 @@ export default function userDataRoutes(prisma) {
             },
           },
         }),
-        prisma.listeningHistory.count(),
+        prisma.listeningHistory.count({ where: { userId: req.user.id } }),
       ]);
 
       const mapped = data.map(h => ({
@@ -47,6 +48,7 @@ export default function userDataRoutes(prisma) {
   router.get('/playlists', async (req, res) => {
     try {
       const data = await prisma.playlist.findMany({
+        where: { userId: req.user.id },
         orderBy: { createdAt: 'desc' },
       });
 
@@ -77,6 +79,7 @@ export default function userDataRoutes(prisma) {
           description: description || '',
           emoji: emoji || '📋',
           episodeCount: 0,
+          userId: req.user.id,
         },
       });
 
@@ -104,6 +107,9 @@ export default function userDataRoutes(prisma) {
       if (description !== undefined) data.description = description;
       if (emoji !== undefined) data.emoji = emoji;
 
+      const existing = await prisma.playlist.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+      if (!existing) return res.status(404).json({ error: 'Playlist not found' });
+
       const playlist = await prisma.playlist.update({
         where: { id: req.params.id },
         data,
@@ -128,6 +134,8 @@ export default function userDataRoutes(prisma) {
   // Playlists — delete
   router.delete('/playlists/:id', async (req, res) => {
     try {
+      const existing = await prisma.playlist.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+      if (!existing) return res.status(404).json({ error: 'Playlist not found' });
       await prisma.playlist.delete({ where: { id: req.params.id } });
       res.json({ success: true });
     } catch (err) {
@@ -140,6 +148,7 @@ export default function userDataRoutes(prisma) {
   router.get('/saved-podcasts', async (req, res) => {
     try {
       const saved = await prisma.savedPodcast.findMany({
+        where: { userId: req.user.id },
         include: {
           podcast: {
             include: {
@@ -180,10 +189,10 @@ export default function userDataRoutes(prisma) {
       const { podcastId } = req.body;
       if (!podcastId) return res.status(400).json({ error: 'podcastId is required' });
 
-      const existing = await prisma.savedPodcast.findFirst({ where: { podcastId } });
+      const existing = await prisma.savedPodcast.findFirst({ where: { podcastId, userId: req.user.id } });
       if (existing) return res.json({ data: { id: existing.id, podcastId: existing.podcastId } });
 
-      const saved = await prisma.savedPodcast.create({ data: { podcastId } });
+      const saved = await prisma.savedPodcast.create({ data: { podcastId, userId: req.user.id } });
       res.json({ data: { id: saved.id, podcastId: saved.podcastId } });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -193,7 +202,7 @@ export default function userDataRoutes(prisma) {
   // Saved podcasts — delete
   router.delete('/saved-podcasts/:podcastId', async (req, res) => {
     try {
-      const record = await prisma.savedPodcast.findFirst({ where: { podcastId: req.params.podcastId } });
+      const record = await prisma.savedPodcast.findFirst({ where: { podcastId: req.params.podcastId, userId: req.user.id } });
       if (!record) return res.status(404).json({ error: 'Saved podcast not found' });
 
       await prisma.savedPodcast.delete({ where: { id: record.id } });
@@ -206,6 +215,9 @@ export default function userDataRoutes(prisma) {
   // Playlist episodes — list
   router.get('/playlists/:id/episodes', async (req, res) => {
     try {
+      const playlist = await prisma.playlist.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+      if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+
       const entries = await prisma.playlistEpisode.findMany({
         where: { playlistId: req.params.id },
         include: {
@@ -241,6 +253,9 @@ export default function userDataRoutes(prisma) {
       const { episodeId } = req.body;
       if (!episodeId) return res.status(400).json({ error: 'episodeId is required' });
 
+      const playlist = await prisma.playlist.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+      if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+
       const existing = await prisma.playlistEpisode.findFirst({
         where: { playlistId: req.params.id, episodeId },
       });
@@ -264,6 +279,9 @@ export default function userDataRoutes(prisma) {
   // Playlist episodes — remove
   router.delete('/playlists/:id/episodes/:episodeId', async (req, res) => {
     try {
+      const playlist = await prisma.playlist.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+      if (!playlist) return res.status(404).json({ error: 'Playlist not found' });
+
       const record = await prisma.playlistEpisode.findFirst({
         where: { playlistId: req.params.id, episodeId: req.params.episodeId },
       });

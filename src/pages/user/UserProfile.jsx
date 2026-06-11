@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { PageHeader, Button, Input, Avatar, Switch, Card, ConfirmDialog, StatCard } from '../../components/ui';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../components/ui/Toast';
-import { changePassword, deleteUser } from '../../services/data';
+import { changePassword, deleteUser, fetchListeningHistory } from '../../services/data';
 import { Save, Camera, Moon, Sun, Palette, Trash2, Download, Globe, Headphones, Clock, Award } from 'lucide-react';
 
 const ACCENT_COLORS = [
@@ -40,6 +40,48 @@ export default function UserProfile() {
   const [socialLinkedin, setSocialLinkedin] = useState(user?.social?.linkedin || '');
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [stats, setStats] = useState({ listeningTime: '0 hrs', episodesCompleted: '0', streak: '0 days' });
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const res = await fetchListeningHistory({ pageSize: 500 });
+        const history = res.data || [];
+        
+        // Calculate Total Listening Time
+        let totalSeconds = 0;
+        let completed = 0;
+        
+        const dates = new Set();
+
+        history.forEach(item => {
+          if (item.duration && !isNaN(item.duration)) {
+             totalSeconds += (item.progress / 100) * Number(item.duration);
+          }
+          if (item.progress >= 90) {
+             completed += 1;
+          }
+          if (item.playedAt) {
+             dates.add(item.playedAt.split('T')[0]);
+          }
+        });
+
+        const hours = Math.round(totalSeconds / 3600);
+        
+        // Calculate simple streak (number of unique days)
+        const streak = dates.size;
+
+        setStats({
+          listeningTime: `${hours} hrs`,
+          episodesCompleted: `${completed}`,
+          streak: `${streak} days`
+        });
+      } catch (err) {
+        console.error('Failed to load history stats', err);
+      }
+    }
+    loadStats();
+  }, []);
 
   const handleProfileSave = async () => {
     setSaving(true);
@@ -104,9 +146,9 @@ export default function UserProfile() {
   }, [theme]);
 
   const activityStats = [
-    { label: 'Total Listening Time', value: '843 hrs', icon: Clock, color: 'var(--color-accent-purple)' },
-    { label: 'Episodes Completed', value: '342', icon: Headphones, color: 'var(--color-accent-blue)' },
-    { label: 'Listening Streak', value: '12 days', icon: Award, color: 'var(--color-accent-orange)' },
+    { label: 'Total Listening Time', value: stats.listeningTime, icon: Clock, color: 'var(--color-accent-purple)' },
+    { label: 'Episodes Completed', value: stats.episodesCompleted, icon: Headphones, color: 'var(--color-accent-blue)' },
+    { label: 'Listening Streak', value: stats.streak, icon: Award, color: 'var(--color-accent-orange)' },
   ];
 
   return (

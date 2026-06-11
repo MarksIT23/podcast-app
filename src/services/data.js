@@ -283,6 +283,15 @@ export async function deleteHighlightCollection(id) {
 }
 
 // ============================================
+// Public Stats
+// ============================================
+
+export async function fetchPublicStats() {
+  const res = await api.get('/stats');
+  return res.data;
+}
+
+// ============================================
 // Real-time (no-op — not supported via REST API)
 // ============================================
 

@@ -1,4 +1,19 @@
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET || 'supersecret');
+      req.user = payload;
+    } catch {
+      // ignore
+    }
+  }
+  next();
+};
 
 export default function publicRoutes(prisma) {
   const router = Router();
@@ -101,7 +116,7 @@ export default function publicRoutes(prisma) {
   });
 
   // Playback progress — save position
-  router.post('/progress', async (req, res) => {
+  router.post('/progress', optionalAuth, async (req, res) => {
     try {
       const { episodeId, progress } = req.body;
       if (!episodeId || progress === undefined) {
@@ -110,7 +125,7 @@ export default function publicRoutes(prisma) {
 
       // Find existing record for this episode, or create one
       const existing = await prisma.listeningHistory.findFirst({
-        where: { episodeId },
+        where: { episodeId, userId: req.user?.id || null },
         orderBy: { playedAt: 'desc' },
       });
 
@@ -122,7 +137,7 @@ export default function publicRoutes(prisma) {
         });
       } else {
         record = await prisma.listeningHistory.create({
-          data: { episodeId, progress: Math.min(100, Math.max(0, progress)), playedAt: new Date() },
+          data: { episodeId, progress: Math.min(100, Math.max(0, progress)), playedAt: new Date(), userId: req.user?.id || null },
         });
       }
       res.json({ data: record });
@@ -132,10 +147,10 @@ export default function publicRoutes(prisma) {
   });
 
   // Playback progress — get position
-  router.get('/progress/:episodeId', async (req, res) => {
+  router.get('/progress/:episodeId', optionalAuth, async (req, res) => {
     try {
       const record = await prisma.listeningHistory.findFirst({
-        where: { episodeId: req.params.episodeId },
+        where: { episodeId: req.params.episodeId, userId: req.user?.id || null },
         orderBy: { playedAt: 'desc' },
       });
       res.json({ data: record ? { progress: record.progress, playedAt: record.playedAt } : null });
@@ -145,14 +160,14 @@ export default function publicRoutes(prisma) {
   });
 
   // Log a play event
-  router.post('/history', async (req, res) => {
+  router.post('/history', optionalAuth, async (req, res) => {
     try {
       const { episodeId } = req.body;
       if (!episodeId) return res.status(400).json({ error: 'episodeId is required' });
 
       // Create history record
       const record = await prisma.listeningHistory.create({
-        data: { episodeId, progress: 0, playedAt: new Date() },
+        data: { episodeId, progress: 0, playedAt: new Date(), userId: req.user?.id || null },
       });
 
       // Increment plays on the Episode

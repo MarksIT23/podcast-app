@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageHeader, StatCard, Card } from '../../components/ui';
 import { Headphones, Bookmark, Clock, TrendingUp, Play, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchListeningHistory, fetchPodcasts, fetchCategories, fetchSavedPodcasts } from '../../services/data';
+import { fetchListeningHistory, fetchPodcasts, fetchCategories, fetchSavedPodcasts, fetchPublicStats } from '../../services/data';
 import { useAudio } from '../../components/AudioPlayer';
 import { staggerContainer, staggerItem } from '../../animations';
 
@@ -76,7 +76,8 @@ export default function UserDashboard() {
       fetchCategories(),
       fetchPodcasts({ pageSize: 1 }),
       fetchSavedPodcasts(),
-    ]).then(([histRes, histAll, catRes, podsRes, savedRes]) => {
+      fetchPublicStats(),
+    ]).then(([histRes, histAll, catRes, podsRes, savedRes, statsRes]) => {
       setHistory(histRes.data);
       setAllHistory(histAll.data || []);
       const inProgress = (histAll.data || [])
@@ -85,7 +86,7 @@ export default function UserDashboard() {
       setContinueListening(inProgress);
       setTopCategories([...catRes.data].sort((a, b) => b.podcastCount - a.podcastCount).slice(0, 4));
       setTotalPodcasts(podsRes.total);
-      setTotalEpisodes(podsRes.total);
+      setTotalEpisodes(statsRes.data?.totalEpisodes || 0);
       setSavedCount((savedRes.data || []).length);
       setLoading(false);
     });
@@ -221,7 +222,7 @@ export default function UserDashboard() {
                     <p className="text-small font-medium truncate">{cat.name}</p>
                     <p className="text-caption text-[var(--text-tertiary)]">{cat.podcastCount} podcasts</p>
                   </div>
-                  <span className="text-small text-[var(--text-secondary)]">{((cat.name?.length || 0) * 7) % 35 + 15}%</span>
+                  <span className="text-small text-[var(--text-secondary)]">{totalPodcasts > 0 ? Math.round((cat.podcastCount / totalPodcasts) * 100) : 0}%</span>
                 </div>
               ))}
             </div>
